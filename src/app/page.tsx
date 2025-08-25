@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusCircle } from "lucide-react";
 import { format } from "date-fns";
 
@@ -20,8 +20,12 @@ import {
 
 export default function Home() {
   const [tasks, setTasks] = useLocalStorage<Task[]>("chrono-flow-tasks", []);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  useEffect(() => {
+    setSelectedDate(new Date());
+  }, []);
 
   const addTask = (task: Omit<Task, "id" | "status">) => {
     const newTask: Task = {
@@ -44,6 +48,10 @@ export default function Home() {
   const deleteTask = (id: string) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
+
+  if (!selectedDate) {
+    return null; // or a loading spinner
+  }
 
   return (
     <div className="container mx-auto min-h-screen max-w-5xl p-4 md:p-8">
