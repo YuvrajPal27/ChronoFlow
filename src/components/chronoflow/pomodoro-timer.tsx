@@ -29,9 +29,13 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
 
   // Effect to reset timer when task duration or ID changes
   useEffect(() => {
-    setTimeLeft(task.timeLeft ?? task.duration * 60);
-    setIsActive(false); 
-  }, [task.id, task.duration, task.timeLeft]);
+    // Only reset timer if the task is not currently in progress
+    if (task.status !== 'in_progress') {
+      setTimeLeft(task.timeLeft ?? task.duration * 60);
+    }
+    // Sync active state with task status from props
+    setIsActive(task.status === 'in_progress');
+  }, [task.id, task.duration, task.timeLeft, task.status]);
 
   // Main timer tick effect
   useEffect(() => {
@@ -51,7 +55,7 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
         clearInterval(interval);
       }
     };
-  }, [isActive, timeLeft, task]);
+  }, [isActive, timeLeft, task.id]); // Removed task from dependencies to prevent reset
 
   // Effect to persist time left while timer is active
   useEffect(() => {
@@ -61,7 +65,7 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
       onUpdateTaskRef.current({ ...task, timeLeft: timeLeft, status: 'in_progress' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, isActive]);
+  }, [timeLeft, isActive]); // Only depends on what it needs to
 
 
   const toggleTimer = () => {
@@ -104,7 +108,6 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
           variant="ghost"
           onClick={toggleTimer}
           aria-label={isActive ? "Pause timer" : "Start timer"}
-          disabled={task.status === 'done' && timeLeft > 0}
         >
           {isActive ? (
             <Pause className="h-6 w-6" />
