@@ -25,13 +25,9 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
   // Effect to reset timer when task duration or ID changes
   useEffect(() => {
     // Only reset if it's a new task or duration changed, not just a reload
-    if (task.timeLeft === undefined) {
-      setTimeLeft(task.duration * 60);
-    } else {
-      setTimeLeft(task.timeLeft);
-    }
+    setTimeLeft(task.timeLeft ?? task.duration * 60);
     setIsActive(false);
-  }, [task.duration, task.id]);
+  }, [task.id, task.duration]);
 
 
   // Main timer tick effect
@@ -57,9 +53,10 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
   // Effect to persist timeLeft
   useEffect(() => {
     // Do not persist the initial time unless it's an active change
-    if (timeLeft !== task.duration * 60) {
+    if (timeLeft !== task.duration * 60 || task.timeLeft !== timeLeft) {
       onUpdateTask({ ...task, timeLeft });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
   const toggleTimer = () => {

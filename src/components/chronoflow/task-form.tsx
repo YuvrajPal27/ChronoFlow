@@ -30,8 +30,12 @@ const formSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters."),
   description: z.string().optional(),
   date: z.date(),
-  duration: z.coerce.number().min(1, "Duration must be at least 1 minute.").max(120),
+  durationHours: z.coerce.number().min(0).optional(),
+  durationMinutes: z.coerce.number().min(0).optional(),
   category: z.string().min(2, "Category is required."),
+}).refine(data => (data.durationHours || 0) + (data.durationMinutes || 0) > 0, {
+  message: "Duration must be at least 1 minute.",
+  path: ["durationMinutes"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -51,16 +55,20 @@ export function TaskForm({ onAddTask, selectedDate }: TaskFormProps) {
       title: "",
       description: "",
       date: selectedDate,
-      duration: 25,
+      durationHours: 0,
+      durationMinutes: 25,
       category: "Work",
     },
   });
 
   function onSubmit(values: FormValues) {
+    const totalMinutes = (values.durationHours || 0) * 60 + (values.durationMinutes || 0);
     onAddTask({
-      ...values,
-      date: values.date.toISOString(),
+      title: values.title,
       description: values.description || "",
+      date: values.date.toISOString(),
+      duration: totalMinutes,
+      category: values.category,
     });
     form.reset({
       ...values,
@@ -133,19 +141,34 @@ export function TaskForm({ onAddTask, selectedDate }: TaskFormProps) {
           )}
         />
         <div className="flex gap-4">
-          <FormField
-            control={form.control}
-            name="duration"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Duration (minutes)</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="flex-1 space-y-2">
+            <FormLabel>Duration</FormLabel>
+            <div className="flex items-center gap-2">
+              <FormField
+                control={form.control}
+                name="durationHours"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input type="number" placeholder="Hours" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="durationMinutes"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <Input type="number" placeholder="Minutes" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+             <FormMessage>{form.formState.errors.durationMinutes?.message}</FormMessage>
+          </div>
           <FormField
             control={form.control}
             name="date"
