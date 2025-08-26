@@ -56,18 +56,19 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
 
   // Effect to persist timeLeft
   useEffect(() => {
-    if (timeLeft !== initialTime) {
+    // Do not persist the initial time unless it's an active change
+    if (timeLeft !== task.duration * 60) {
       onUpdateTask({ ...task, timeLeft });
     }
   }, [timeLeft]);
 
   const toggleTimer = () => {
     if (task.status === "done" && timeLeft === 0) {
-      // If task is done and timer is at 0, reset it.
-      resetTimer();
-      // Immediately start the timer after resetting
+      // If task is done and timer is at 0, reset it and start it immediately.
+      const newTime = task.duration * 60;
+      setTimeLeft(newTime);
       setIsActive(true); 
-      onUpdateTask({ ...task, status: "in_progress", timeLeft: task.duration * 60 });
+      onUpdateTask({ ...task, status: "in_progress", timeLeft: newTime });
       return;
     }
     
