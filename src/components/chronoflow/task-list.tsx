@@ -11,6 +11,7 @@ interface TaskListProps {
   selectedDate: Date;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
+  onEditTask: (task: Task) => void;
 }
 
 export default function TaskList({
@@ -18,6 +19,7 @@ export default function TaskList({
   selectedDate,
   onUpdateTask,
   onDeleteTask,
+  onEditTask,
 }: TaskListProps) {
   const filteredTasks = useMemo(() => {
     return tasks
@@ -45,6 +47,7 @@ export default function TaskList({
           task={task}
           onUpdateTask={onUpdateTask}
           onDeleteTask={onDeleteTask}
+          onEditTask={onEditTask}
         />
       ))}
     </div>

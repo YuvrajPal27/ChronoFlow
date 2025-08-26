@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Sparkles } from "lucide-react";
 
@@ -41,11 +41,12 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 interface TaskFormProps {
-  onAddTask: (task: Omit<Task, "id" | "status">) => void;
+  onSaveTask: (task: Omit<Task, "id" | "status" | "timeLeft">, id?: string) => void;
   selectedDate: Date;
+  taskToEdit: Task | null;
 }
 
-export function TaskForm({ onAddTask, selectedDate }: TaskFormProps) {
+export function TaskForm({ onSaveTask, selectedDate, taskToEdit }: TaskFormProps) {
   const [isAiSuggesting, startAiSuggestion] = useTransition();
   const { toast } = useToast();
 
@@ -61,21 +62,37 @@ export function TaskForm({ onAddTask, selectedDate }: TaskFormProps) {
     },
   });
 
+  useEffect(() => {
+    if (taskToEdit) {
+      form.reset({
+        title: taskToEdit.title,
+        description: taskToEdit.description,
+        date: new Date(taskToEdit.date),
+        durationHours: Math.floor(taskToEdit.duration / 60),
+        durationMinutes: taskToEdit.duration % 60,
+        category: taskToEdit.category,
+      });
+    } else {
+      form.reset({
+        title: "",
+        description: "",
+        date: selectedDate,
+        durationHours: 0,
+        durationMinutes: 25,
+        category: "Work",
+      });
+    }
+  }, [taskToEdit, form, selectedDate]);
+
   function onSubmit(values: FormValues) {
     const totalMinutes = (values.durationHours || 0) * 60 + (values.durationMinutes || 0);
-    onAddTask({
+    onSaveTask({
       title: values.title,
       description: values.description || "",
       date: values.date.toISOString(),
       duration: totalMinutes,
       category: values.category,
-    });
-    form.reset({
-      ...values,
-      title: "",
-      description: "",
-      date: selectedDate, // Reset to current selected date
-    });
+    }, taskToEdit?.id);
   }
 
   const handleAiCategorize = () => {
@@ -150,7 +167,7 @@ export function TaskForm({ onAddTask, selectedDate }: TaskFormProps) {
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input type="number" placeholder="Hours" {...field} />
+                      <Input type="number" placeholder="Hours" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -161,7 +178,7 @@ export function TaskForm({ onAddTask, selectedDate }: TaskFormProps) {
                 render={({ field }) => (
                   <FormItem className="flex-1">
                     <FormControl>
-                      <Input type="number" placeholder="Minutes" {...field} />
+                      <Input type="number" placeholder="Minutes" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -238,7 +255,7 @@ export function TaskForm({ onAddTask, selectedDate }: TaskFormProps) {
           )}
         />
         <Button type="submit" className="w-full">
-          Add Task
+          {taskToEdit ? "Save Changes" : "Add Task"}
         </Button>
       </form>
     </Form>

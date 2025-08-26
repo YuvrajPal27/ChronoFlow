@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, GripVertical, CheckCircle, Circle, Hourglass } from "lucide-react";
+import { Trash2, Edit, CheckCircle, Circle, Hourglass } from "lucide-react";
 import type { Task } from "@/lib/types";
 import {
   Card,
@@ -18,6 +18,7 @@ interface TaskCardProps {
   task: Task;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (id: string) => void;
+  onEditTask: (task: Task) => void;
 }
 
 const statusIcons = {
@@ -26,27 +27,38 @@ const statusIcons = {
   done: <CheckCircle className="h-4 w-4 text-green-500" />,
 };
 
-export default function TaskCard({ task, onUpdateTask, onDeleteTask }: TaskCardProps) {
+export default function TaskCard({ task, onUpdateTask, onDeleteTask, onEditTask }: TaskCardProps) {
   return (
-    <Card className="glassmorphism transition-all hover:shadow-2xl">
+    <Card className="glassmorphism transition-all hover:shadow-2xl flex flex-col">
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
                 <CardTitle className="font-headline text-xl">{task.title}</CardTitle>
                 <CardDescription>{task.description}</CardDescription>
             </div>
-            <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive"
-                onClick={() => onDeleteTask(task.id)}
-                aria-label="Delete task"
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
+             <div className="flex items-center">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-primary"
+                    onClick={() => onEditTask(task)}
+                    aria-label="Edit task"
+                >
+                    <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={() => onDeleteTask(task.id)}
+                    aria-label="Delete task"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow">
         <PomodoroTimer task={task} onUpdateTask={onUpdateTask} />
       </CardContent>
       <CardFooter className="flex justify-between items-center">

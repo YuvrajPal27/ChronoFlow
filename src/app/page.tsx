@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Edit, Check, X } from "lucide-react";
 import { format } from "date-fns";
 
 import type { Task } from "@/lib/types";
@@ -11,6 +11,7 @@ import TaskList from "@/components/chronoflow/task-list";
 import { TaskForm } from "@/components/chronoflow/task-form";
 import SplashScreen from "@/components/chronoflow/splash-screen";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -25,31 +26,67 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingName, setEditingName] = useState(userName || "");
 
   useEffect(() => {
     setSelectedDate(new Date());
-    if (!userName) {
+    if (userName === null) {
       setShowSplash(true);
+    } else {
+      setEditingName(userName);
     }
   }, [userName]);
 
   const handleNameSubmit = (name: string) => {
     setUserName(name);
+    setEditingName(name);
     setShowSplash(false);
   };
+  
+  const handleNameEdit = () => {
+    if (editingName.trim()) {
+      setUserName(editingName.trim());
+      setIsEditingName(false);
+    }
+  }
 
-  const addTask = (task: Omit<Task, "id" | "status">) => {
-    const newTask: Task = {
-      ...task,
-      id: crypto.randomUUID(),
-      status: "todo",
-      timeLeft: task.duration * 60,
-    };
-    setTasks((prevTasks) => [...prevTasks, newTask]);
-    setIsFormOpen(false); 
+  const handleOpenFormForEdit = (task: Task) => {
+    setTaskToEdit(task);
+    setIsFormOpen(true);
   };
 
-  const updateTask = (updatedTask: Task) => {
+  const handleOpenFormForAdd = () => {
+    setTaskToEdit(null);
+    setIsFormOpen(true);
+  }
+
+  const upsertTask = (task: Omit<Task, "id" | "status">, id?: string) => {
+    if (id) {
+      // Update existing task
+      setTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t.id === id
+            ? { ...t, ...task, timeLeft: task.duration * 60 }
+            : t
+        )
+      );
+    } else {
+      // Add new task
+      const newTask: Task = {
+        ...task,
+        id: crypto.randomUUID(),
+        status: "todo",
+        timeLeft: task.duration * 60,
+      };
+      setTasks((prevTasks) => [...prevTasks, newTask]);
+    }
+    setIsFormOpen(false);
+    setTaskToEdit(null);
+  };
+
+  const updateTaskStatus = (updatedTask: Task) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === updatedTask.id ? updatedTask : task
@@ -76,9 +113,27 @@ export default function Home() {
           ChronoFlow
         </h1>
         {userName && (
-          <p className="text-muted-foreground mt-4 text-lg">
-            Welcome, {userName}!
-          </p>
+          <div className="mt-4 flex items-center justify-center gap-2 text-lg">
+            {isEditingName ? (
+              <>
+                <Input 
+                  value={editingName} 
+                  onChange={(e) => setEditingName(e.target.value)}
+                  className="w-48 text-center"
+                  onKeyDown={(e) => e.key === 'Enter' && handleNameEdit()}
+                />
+                <Button size="icon" variant="ghost" onClick={handleNameEdit}><Check className="h-4 w-4"/></Button>
+                <Button size="icon" variant="ghost" onClick={() => setIsEditingName(false)}><X className="h-4 w-4" /></Button>
+              </>
+            ) : (
+              <>
+                <p className="text-muted-foreground">Welcome, {userName}!</p>
+                <Button size="icon" variant="ghost" onClick={() => setIsEditingName(true)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
         )}
         <p className="text-muted-foreground mt-2">
           Focus, Track, and Achieve on {format(selectedDate, "PPP")}
@@ -90,18 +145,27 @@ export default function Home() {
           selectedDate={selectedDate}
           onDateChange={setSelectedDate}
         />
-        <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <Sheet open={isFormOpen} onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setTaskToEdit(null);
+        }}>
           <SheetTrigger asChild>
-            <Button>
+            <Button onClick={handleOpenFormForAdd}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New Task
             </Button>
           </SheetTrigger>
           <SheetContent className="glassmorphism w-full sm:max-w-md">
             <SheetHeader>
-              <SheetTitle className="font-headline text-2xl">Create a New Task</SheetTitle>
+              <SheetTitle className="font-headline text-2xl">
+                {taskToEdit ? "Edit Task" : "Create a New Task"}
+              </SheetTitle>
             </SheetHeader>
-            <TaskForm onAddTask={addTask} selectedDate={selectedDate} />
+            <TaskForm 
+              onSaveTask={upsertTask} 
+              selectedDate={selectedDate} 
+              taskToEdit={taskToEdit}
+            />
           </SheetContent>
         </Sheet>
       </div>
@@ -109,8 +173,9 @@ export default function Home() {
       <TaskList
         tasks={tasks}
         selectedDate={selectedDate}
-        onUpdateTask={updateTask}
+        onUpdateTask={updateTaskStatus}
         onDeleteTask={deleteTask}
+        onEditTask={handleOpenFormForEdit}
       />
     </div>
   );
