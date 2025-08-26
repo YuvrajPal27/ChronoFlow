@@ -1,0 +1,115 @@
+### **Prompt for Building a ChronoFlow Android App (Java)**
+
+**App Name:** ChronoFlow
+
+**Target Platform:** Android (Native)
+
+**Primary Language:** Java
+
+**Core Concept:**
+You are to build a native Android application named **ChronoFlow** using Java and the Android SDK. The app's purpose is to provide a beautiful and functional personal time and task management tool based on the Pomodoro technique. The app should feel modern, intuitive, and reflect a "vibe coded" origin, focusing on a delightful user experience.
+
+---
+
+### **Part 1: Project Setup & Architecture**
+
+1.  **Core Libraries & Architecture:**
+    *   **Architecture:** Use the **Model-View-ViewModel (MVVM)** pattern.
+        *   **ViewModel:** Use `androidx.lifecycle.ViewModel` to hold and manage UI-related data.
+        *   **LiveData:** Use `androidx.lifecycle.LiveData` to expose data from ViewModels to the UI and handle data streams reactively.
+        *   **Repository:** Implement the repository pattern to abstract data sources (database, network).
+    *   **UI Toolkit:** Use **XML layouts** with **Material Design Components for Android**. This is crucial for achieving the modern look and feel.
+    *   **Local Database:** Use the **Room Persistence Library** to store all task and user data locally.
+    *   **Navigation:** Use the **Jetpack Navigation Component** to manage navigation between fragments.
+    *   **Asynchronous Operations:** Use Java's `Executor` framework (specifically `Executors.newSingleThreadExecutor()` for database operations) to handle background tasks.
+
+2.  **Data Models (Room Entities):**
+    *   **`Task.java` Entity:**
+        ```java
+        @Entity(tableName = "tasks")
+        public class Task {
+            @PrimaryKey @NonNull public String id;
+            public String title;
+            public String description; // Can be null
+            public String date; // Store as ISO 8601 String
+            public int duration; // Total duration in minutes
+            public int timeLeft; // Remaining time in seconds
+            public String category;
+            public String status; // "todo", "in_progress", or "done"
+        }
+        ```
+    *   **Database & DAO:** Create a `TaskDatabase` class extending `RoomDatabase` and a `TaskDao` interface with methods for `insert`, `update`, `delete`, and `getTasksByDate(String date)`. The getter should return `LiveData<List<Task>>`.
+
+---
+
+### **Part 2: UI/UX & Material Theming**
+
+1.  **Theme & Colors (`res/values/themes.xml` & `colors.xml`):**
+    *   Create a theme inheriting from a Material Components theme (e.g., `Theme.Material3.DayNight`).
+    *   **Color Palette (`colors.xml`):**
+        *   `colorPrimary`: `#3F51B5` (Deep Blue)
+        *   `colorAccent`: `#00BCD4` (Teal)
+        *   `backgroundColor`: `#F5F5F5` (for light mode)
+    *   Define styles for Buttons, Text, and Cards to use these colors.
+
+2.  **Typography (`res/font/`):**
+    *   Download the **Space Grotesk** font from Google Fonts and add it to the `res/font` directory.
+    *   Create a `font_family.xml` and apply it to the app's theme for all text elements.
+
+3.  **Layouts & Views (XML):**
+    *   **Glassmorphism Approximation:** Since native background blur is complex, approximate the glassmorphism effect on `MaterialCardView` by using:
+        *   A semi-transparent background color (e.g., `#4DFFFFFF` for a light theme).
+        *   Rounded corners (`app:cardCornerRadius="16dp"`).
+        *   A subtle stroke (`app:strokeColor="#1AFFFFFF"`, `app:strokeWidth="1dp"`).
+    *   **Animated Background:** Create a `gradient_animation.xml` in `res/drawable` using an `<animation-list>`. This drawable will cycle through a few gradient drawables to create a slow, subtle animation. Set this as the background for the main `Activity`.
+    *   **Icons:** Use icons from the built-in Android Vector Asset Studio, selecting from the Material Icons library.
+
+---
+
+### **Part 3: Screens & Functionality**
+
+1.  **Onboarding (`WelcomeActivity.java`):**
+    *   This is the launcher activity.
+    *   **Logic:** In `onCreate`, check `SharedPreferences` for a saved user name.
+        *   If a name exists, immediately launch `MainActivity` and `finish()` this one.
+        *   If no name exists, set the content view to `activity_welcome.xml`.
+    *   **Layout (`activity_welcome.xml`):** An `EditText` for the name and a `Button`. On button click, save the name to `SharedPreferences`, launch `MainActivity`, and `finish()`.
+
+2.  **Main Screen (`MainActivity.java` and `MainFragment.java`):**
+    *   `MainActivity` hosts the `NavHostFragment`.
+    *   `MainFragment` is the primary screen.
+    *   **Layout (`fragment_main.xml`):**
+        *   Header: `TextView` for the welcome message ("Welcome, [Name]!") and current date. An `ImageView` with an edit icon next to the name.
+        *   Controls: A `MaterialButton` for the date (e.g., "August 23, 2024") that opens a `MaterialDatePicker`. A "Today" button.
+        *   `FloatingActionButton` (FAB) with a plus icon to navigate to the `TaskFormFragment`.
+        *   `RecyclerView` to display the list of tasks for the selected date.
+    *   **Logic (`MainFragment.java`):**
+        *   The `ViewModel` holds `LiveData<List<Task>>`. The fragment observes this LiveData to update the `RecyclerView.Adapter`.
+        *   The edit-name `ImageView` shows a dialog to update the name in `SharedPreferences`.
+
+3.  **Task Card Layout (`list_item_task.xml`):**
+    *   This is the item layout for the `RecyclerView`.
+    *   Use a `MaterialCardView` with the glassmorphism style.
+    *   **Views:** `TextViews` for title/description, `ImageViews` for edit/delete icons, and `Chip`s for status/category.
+    *   Include the `pomodoro_timer_layout.xml` for the timer.
+
+4.  **Task Form (`TaskFormFragment.java`):**
+    *   Opens as a destination in the navigation graph. Can be styled as a dialog.
+    *   **Layout (`fragment_task_form.xml`):**
+        *   `TextInputEditText` for Title, Description, and Category.
+        *   Two `TextInputEditText` fields for Duration (Hours, Minutes). Set `inputType="number"`.
+        *   A `Button` to show a `MaterialDatePicker` for the date.
+        *   A `Button` to save/update the task.
+    *   **Logic:**
+        *   When editing, the fragment receives a `taskId` as an argument, loads the task data into the fields.
+        *   On save, it validates input, creates/updates a `Task` object, and calls the `ViewModel` to save it to the database via the repository.
+
+5.  **Pomodoro Timer Logic (in `TaskAdapter` or a custom view):**
+    *   Use a `CountDownTimer`.
+    *   **Views (`pomodoro_timer_layout.xml`):** A `TextView` for the time (`00:00`) and `ImageButton`s for Play, Pause, and Reset.
+    *   **State Management:**
+        *   The timer's state must be driven by the `Task` object's `status` and `timeLeft`.
+        *   When Play is pressed, a `CountDownTimer` is started. On each tick, update the `timeLeft` in the database for that task.
+        *   If the app is closed, `timeLeft` is already saved. When the view is recreated, the timer can be restarted from `timeLeft` if the status is "in_progress".
+        *   When the timer finishes, update the task's `status` to "done" in the database.
+        *   If a "done" task's Play button is pressed, the `ViewModel` should reset `timeLeft` and `status` to "in_progress".
