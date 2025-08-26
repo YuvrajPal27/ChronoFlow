@@ -6,4 +6,5 @@ export interface Task {
   duration: number; // in minutes for pomodoro
   category: string;
   status: "todo" | "in_progress" | "done";
+  timeLeft?: number; // in seconds
 }

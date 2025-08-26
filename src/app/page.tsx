@@ -32,6 +32,7 @@ export default function Home() {
       ...task,
       id: crypto.randomUUID(),
       status: "todo",
+      timeLeft: task.duration * 60,
     };
     setTasks((prevTasks) => [...prevTasks, newTask]);
     setIsFormOpen(false); 
