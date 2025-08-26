@@ -12,9 +12,8 @@ interface PomodoroTimerProps {
 
 export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps) {
   const [timeLeft, setTimeLeft] = useState(task.timeLeft ?? task.duration * 60);
-  const [isActive, setIsActive] = useState(false);
+  const [isActive, setIsActive] = useState(task.status === 'in_progress');
   
-  // Use a ref to hold the latest onUpdateTask function without causing re-renders.
   const onUpdateTaskRef = useRef(onUpdateTask);
   useEffect(() => {
     onUpdateTaskRef.current = onUpdateTask;
@@ -27,17 +26,11 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
     onUpdateTaskRef.current({ ...task, status: "todo", timeLeft: newTime });
   }, [task]);
 
-  // Effect to reset timer when task duration or ID changes
   useEffect(() => {
-    // Only reset timer if the task is not currently in progress
-    if (task.status !== 'in_progress') {
-      setTimeLeft(task.timeLeft ?? task.duration * 60);
-    }
-    // Sync active state with task status from props
+    setTimeLeft(task.timeLeft ?? task.duration * 60);
     setIsActive(task.status === 'in_progress');
   }, [task.id, task.duration, task.timeLeft, task.status]);
 
-  // Main timer tick effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
@@ -45,7 +38,7 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
       interval = setInterval(() => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
-    } else if (timeLeft === 0 && isActive) {
+    } else if (isActive && timeLeft === 0) {
       setIsActive(false);
       onUpdateTaskRef.current({ ...task, status: "done", timeLeft: 0 });
     }
@@ -55,24 +48,11 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
         clearInterval(interval);
       }
     };
-  }, [isActive, timeLeft, task.id]); // Removed task from dependencies to prevent reset
-
-  // Effect to persist time left while timer is active
-  useEffect(() => {
-    // This effect is dedicated to persisting the timeLeft.
-    // It runs only when isActive or timeLeft changes.
-    if (isActive) {
-      onUpdateTaskRef.current({ ...task, timeLeft: timeLeft, status: 'in_progress' });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, isActive]); // Only depends on what it needs to
-
+  }, [isActive, timeLeft, task]);
 
   const toggleTimer = () => {
     const newIsActive = !isActive;
-    setIsActive(newIsActive);
-
-    // If task is done and timer is at 0, reset it and start it.
+    
     if (task.status === "done" && timeLeft === 0) {
       const newTime = task.duration * 60;
       setTimeLeft(newTime);
@@ -82,11 +62,11 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
     }
     
     if (newIsActive) {
-        onUpdateTaskRef.current({ ...task, status: "in_progress" });
+      onUpdateTaskRef.current({ ...task, status: "in_progress", timeLeft });
     } else {
-       // Persist the paused time.
        onUpdateTaskRef.current({ ...task, timeLeft, status: 'todo' });
     }
+    setIsActive(newIsActive);
   };
 
   const minutes = Math.floor(timeLeft / 60);
