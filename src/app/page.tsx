@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -29,14 +30,21 @@ export default function Home() {
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState(userName || "");
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (userName === null) {
-      setShowSplash(true);
-    } else {
-      setEditingName(userName);
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      if (userName === null) {
+        setShowSplash(true);
+      } else {
+        setEditingName(userName);
+      }
     }
-  }, [userName]);
+  }, [userName, isClient]);
 
   const handleNameSubmit = (name: string) => {
     setUserName(name);
@@ -62,26 +70,22 @@ export default function Home() {
   }
 
   const upsertTask = (task: Omit<Task, "id" | "status" | "timeLeft">, id?: string) => {
-    const taskData = {
-      ...task,
-      timeLeft: task.duration * 60,
-    };
-  
     if (id) {
-      // Update existing task, keeping its original status unless it's done
+      // Update existing task
       setTasks(prevTasks =>
         prevTasks.map(t =>
           t.id === id
-            ? { ...t, ...taskData }
+            ? { ...t, ...task, timeLeft: task.duration * 60 }
             : t
         )
       );
     } else {
       // Add new task
       const newTask: Task = {
-        ...taskData,
+        ...task,
         id: crypto.randomUUID(),
         status: "todo",
+        timeLeft: task.duration * 60,
       };
       setTasks(prevTasks => [...prevTasks, newTask]);
     }
@@ -101,7 +105,7 @@ export default function Home() {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
   
-  if (showSplash) {
+  if (!isClient || showSplash) {
     return <SplashScreen onNameSubmit={handleNameSubmit} />;
   }
 
