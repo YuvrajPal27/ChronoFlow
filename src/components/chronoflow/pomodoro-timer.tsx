@@ -31,21 +31,18 @@ export default function PomodoroTimer({ task, onUpdateTask }: PomodoroTimerProps
   // Main timer tick and persistence effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1);
+        setTimeLeft((prevTime) => {
+          const newTime = prevTime - 1;
+          onUpdateTask({ ...task, timeLeft: newTime });
+          return newTime;
+        });
       }, 1000);
-    } else if (isActive && timeLeft === 0) {
+    } else if (timeLeft === 0 && isActive) {
       setIsActive(false);
       onUpdateTask({ ...task, status: "done", timeLeft: 0 });
     }
-
-    // Persist timeLeft on change if it's not the initial state or already persisted
-    if (timeLeft !== task.timeLeft) {
-        onUpdateTask({ ...task, timeLeft });
-    }
-
     return () => {
       if (interval) {
         clearInterval(interval);
