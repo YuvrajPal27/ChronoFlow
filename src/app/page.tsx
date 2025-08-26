@@ -23,7 +23,7 @@ import {
 export default function Home() {
   const [tasks, setTasks] = useLocalStorage<Task[]>("chrono-flow-tasks", []);
   const [userName, setUserName] = useLocalStorage<string | null>("chrono-flow-user", null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [showSplash, setShowSplash] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
@@ -31,7 +31,6 @@ export default function Home() {
   const [editingName, setEditingName] = useState(userName || "");
 
   useEffect(() => {
-    setSelectedDate(new Date());
     if (userName === null) {
       setShowSplash(true);
     } else {
@@ -62,25 +61,29 @@ export default function Home() {
     setIsFormOpen(true);
   }
 
-  const upsertTask = (task: Omit<Task, "id" | "status">, id?: string) => {
+  const upsertTask = (task: Omit<Task, "id" | "status" | "timeLeft">, id?: string) => {
+    const taskData = {
+      ...task,
+      timeLeft: task.duration * 60,
+    };
+  
     if (id) {
-      // Update existing task
-      setTasks((prevTasks) =>
-        prevTasks.map((t) =>
+      // Update existing task, keeping its original status unless it's done
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
           t.id === id
-            ? { ...t, ...task, timeLeft: task.duration * 60 }
+            ? { ...t, ...taskData }
             : t
         )
       );
     } else {
       // Add new task
       const newTask: Task = {
-        ...task,
+        ...taskData,
         id: crypto.randomUUID(),
         status: "todo",
-        timeLeft: task.duration * 60,
       };
-      setTasks((prevTasks) => [...prevTasks, newTask]);
+      setTasks(prevTasks => [...prevTasks, newTask]);
     }
     setIsFormOpen(false);
     setTaskToEdit(null);
@@ -100,10 +103,6 @@ export default function Home() {
   
   if (showSplash) {
     return <SplashScreen onNameSubmit={handleNameSubmit} />;
-  }
-
-  if (!selectedDate) {
-    return null; // or a loading spinner
   }
 
   return (
