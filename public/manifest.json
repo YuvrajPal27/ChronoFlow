@@ -2,6 +2,10 @@
   "name": "ChronoFlow",
   "short_name": "ChronoFlow",
   "description": "Your personal time and task manager with AI-powered categorization.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#3F51B5",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -13,9 +17,5 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#F43F5E"
+  ]
 }

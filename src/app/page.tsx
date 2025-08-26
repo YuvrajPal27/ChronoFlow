@@ -9,6 +9,7 @@ import useLocalStorage from "@/hooks/use-local-storage";
 import DateNavigator from "@/components/chronoflow/date-navigator";
 import TaskList from "@/components/chronoflow/task-list";
 import { TaskForm } from "@/components/chronoflow/task-form";
+import SplashScreen from "@/components/chronoflow/splash-screen";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -20,12 +21,22 @@ import {
 
 export default function Home() {
   const [tasks, setTasks] = useLocalStorage<Task[]>("chrono-flow-tasks", []);
+  const [userName, setUserName] = useLocalStorage<string | null>("chrono-flow-user", null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showSplash, setShowSplash] = useState(false);
 
   useEffect(() => {
     setSelectedDate(new Date());
-  }, []);
+    if (!userName) {
+      setShowSplash(true);
+    }
+  }, [userName]);
+
+  const handleNameSubmit = (name: string) => {
+    setUserName(name);
+    setShowSplash(false);
+  };
 
   const addTask = (task: Omit<Task, "id" | "status">) => {
     const newTask: Task = {
@@ -49,6 +60,10 @@ export default function Home() {
   const deleteTask = (id: string) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== id));
   };
+  
+  if (showSplash) {
+    return <SplashScreen onNameSubmit={handleNameSubmit} />;
+  }
 
   if (!selectedDate) {
     return null; // or a loading spinner
@@ -60,6 +75,11 @@ export default function Home() {
         <h1 className="font-headline text-5xl font-bold text-primary">
           ChronoFlow
         </h1>
+        {userName && (
+          <p className="text-muted-foreground mt-4 text-lg">
+            Welcome, {userName}!
+          </p>
+        )}
         <p className="text-muted-foreground mt-2">
           Focus, Track, and Achieve on {format(selectedDate, "PPP")}
         </p>
