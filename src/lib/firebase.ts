@@ -5,13 +5,12 @@ import { initializeApp } from "firebase/app";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  "projectId": "chronoflow-gi9hc",
-  "appId": "1:147748348027:web:e47f7ef6c0a75aa67342de",
-  "storageBucket": "chronoflow-gi9hc.firebasestorage.app",
-  "apiKey": "AIzaSyBxibxrL-N1qSqpomHUv7nYsq5ju4Acnm4",
-  "authDomain": "chronoflow-gi9hc.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "147748348027"
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 // Initialize Firebase
